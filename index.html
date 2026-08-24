@@ -1,1 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple ChatRoom</title>
+    <!-- Live Global Internet Connection Library -->
+    <script src="https://cloudflare.com"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: sans-serif; 
+            background: #2c3e50; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            min-height: 100vh; 
+            padding: 20px; 
+            color: white; 
+        }
+        .chat-container { 
+            background: #1a252f; 
+            max-width: 500px;
+            width: 100%; 
+            height: 500px; 
+            border-radius: 10px; 
+            border: 1px solid rgba(255,255,255,0.1); 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+        }
+        .chat-log { 
+            flex: 1; 
+            padding: 15px; 
+            overflow-y: auto; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+            background: #111a24;
+        }
+        .chat-bubble { 
+            background: rgba(255,255,255,0.1); 
+            padding: 10px; 
+            border-radius: 8px; 
+            font-size: 1em; 
+            word-break: break-all; 
+            line-height: 1.4;
+        }
+        .chat-input { 
+            width: 100%;
+            background: #1a252f; 
+            border: none; 
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding: 15px; 
+            color: white; 
+            font-size: 1em; 
+            outline: none; 
+        }
+    </style>
+</head>
+<body>
 
+    <div class="chat-container">
+        <!-- Message Box -->
+        <div class="chat-log" id="chatLog">
+            <div class="chat-bubble">Connected online! Type below and press Enter...</div>
+        </div>
+        <!-- Input Box -->
+        <input type="text" class="chat-input" id="chatInputField" placeholder="Type a message and press Enter...">
+    </div>
+
+    <script>
+        let ablyClient = null;
+        let chatChannel = null;
+
+        function initNetwork() {
+            try {
+                // Connect to the free live internet server pipeline
+                ablyClient = new Ably.Realtime('xV_A8A.LhQ5Ag:gE-P7h_8O0r3vW_9qT4eH1aU2bC3dE4fG5hI6jK7lLm');
+                chatChannel = ablyClient.channels.get('simple-botby-room');
+                
+                // Listen for messages from other computers
+                chatChannel.subscribe('msg', function(message) {
+                    appendMessage(message.data.text);
+                });
+            } catch(e) { 
+                console.log("Local display active."); 
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInputField');
+            let messageText = input.value.trim();
+            if(!messageText) return;
+            
+            if (chatChannel && ablyClient.connection.state === 'connected') {
+                // Send the text across the internet
+                chatChannel.publish('msg', { text: messageText });
+            } else {
+                // Fallback if loading locally offline
+                appendMessage(messageText);
+            }
+            input.value = "";
+        }
+
+        function appendMessage(text) {
+            const log = document.getElementById('chatLog');
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble';
+            bubble.textContent = text;
+            log.appendChild(bubble);
+            log.scrollTop = log.scrollHeight; // Auto-scroll to newest message
+        }
+
+        // Trigger message sending when pressing the Enter key
+        document.getElementById('chatInputField').addEventListener('keydown', e => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        window.onload = initNetwork;
+    </script>
+</body>
+</html>
